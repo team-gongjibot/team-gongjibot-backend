@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${local-db.mysql.host}:${local-db.mysql.port}/${local-db.mysql.name}
+    username: ${local-db.mysql.username}
+    password: ${local-db.mysql.password}
+
+  mail:
+    host: ${local-mail.host}
+    port: ${local-mail.port}
+    username: ${local-mail.username}
+    password: ${local-mail.password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+        highlight_sql: true
+        hbm2ddl.auto: create
+        default_batch_fetch_size: 100
+    show-sql: true
+    open-in-view: false
+
+logging:
+  level:
+    org:
+      hibernate:
+        type: trace

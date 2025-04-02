@@ -1,0 +1,18 @@
+server:
+  port: 4000
+
+spring:
+  profiles:
+    default: local
+
+  application:
+    name: ragchat
+
+  config:
+    import:
+      - security/application-db.yml
+      - security/application-mail.yml
+
+#JWT Secret Key ??
+secret:
+  key: ${jwt.secret.key}
