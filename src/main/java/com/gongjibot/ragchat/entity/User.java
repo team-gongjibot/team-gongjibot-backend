@@ -1,6 +1,7 @@
 package com.gongjibot.ragchat.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.gongjibot.ragchat.common.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
@@ -11,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class User {
+public class User extends BaseEntity {
     private static final int MAX_NICKNAME_LENGTH = 30;
 
     @Id
