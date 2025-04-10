@@ -2,6 +2,8 @@ package com.gongjibot.ragchat.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.gongjibot.ragchat.common.BaseEntity;
+import com.gongjibot.ragchat.common.Role;
+import com.gongjibot.ragchat.common.SocialType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
@@ -38,12 +40,31 @@ public class User extends BaseEntity {
     @JoinColumn(name = "certification_id")
     private Certification certification;
 
+    @Enumerated(EnumType.STRING)
+    private Role role;
+
+    @Enumerated(EnumType.STRING)
+    private SocialType socialType; // KAKAO, GOOGLE, NAVER
+
+    private String socialId;
+
+    private String refreshToken;
+
+    public void authorizeUser() {
+        this.role = Role.USER;
+    }
+
+    public void updateRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
+    }
+
     @Builder
-    public User(String username, String password, String email, String nickname, Certification certification) {
+    public User(String username, String password, String email, String nickname, Role role, Certification certification) {
         this.username = username;
         this.password = password;
         this.email = email;
         this.nickname = nickname;
+        this.role = role;
         this.certification = certification;
     }
 }
