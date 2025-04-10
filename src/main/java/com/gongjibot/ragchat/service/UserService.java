@@ -1,5 +1,6 @@
 package com.gongjibot.ragchat.service;
 
+import com.gongjibot.ragchat.common.Role;
 import com.gongjibot.ragchat.common.exception.BadRequestException;
 import com.gongjibot.ragchat.common.exception.ErrorCode;
 import com.gongjibot.ragchat.dto.EmailCertificationRequestDto;
@@ -56,6 +57,7 @@ public class UserService {
                 .password(encodePassword)
                 .email(dto.email())
                 .nickname(dto.nickname())
+                .role(Role.USER)
                 .build();
 
         userRepository.save(user);

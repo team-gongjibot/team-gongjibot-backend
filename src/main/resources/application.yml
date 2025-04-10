@@ -12,7 +12,16 @@ spring:
     import:
       - security/application-db.yml
       - security/application-mail.yml
+      - security/application-jwt.yml
 
-#JWT Secret Key ??
-secret:
-  key: ${jwt.secret.key}
+jwt:
+  secretKey: ${JWT_SECRET_KEY}
+  
+  access:
+    expiration: 3600000
+    header: Authorization
+  
+  refresh:
+    expiration: 1209600000
+    header: Authorization-refresh
+  

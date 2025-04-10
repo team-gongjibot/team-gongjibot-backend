@@ -6,6 +6,7 @@ import com.gongjibot.ragchat.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,5 +28,10 @@ public class UserController {
     public ResponseEntity<Void> emailCertification(@RequestBody @Valid EmailCertificationRequestDto requestBody) {
         userService.emailCertification(requestBody);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/jwt-test")
+    public String jwtTest() {
+        return "jwtTest 요청 성공";
     }
 }
