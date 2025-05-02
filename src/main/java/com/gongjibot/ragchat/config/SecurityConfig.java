@@ -61,7 +61,9 @@ public class SecurityConfig {
                         "/h2-console/**",
                         "/api/v1/auth/sign-up",    // 회원가입 API
                         "/api/v1/auth/email-certification", // 이메일 인증 관련 API
-                        "/api/v1/auth/jwt-test"
+                        "/api/v1/auth/jwt-test",
+                        "/api/v1/auth/find-id", // 아이디 찾기 API
+                        "/api/v1/auth/password-reset" // 비밀번호 재설정 API
                 ).permitAll()
                 
                 // 나머지 모든 요청은 인증 필요

@@ -67,4 +67,8 @@ public class User extends BaseEntity {
         this.role = role;
         this.certification = certification;
     }
+
+    public void updatePassword(String newPassword) {
+        this.password = newPassword;
+    }
 }

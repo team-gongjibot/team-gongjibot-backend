@@ -1,7 +1,6 @@
 package com.gongjibot.ragchat.controller;
 
-import com.gongjibot.ragchat.dto.EmailCertificationRequestDto;
-import com.gongjibot.ragchat.dto.SignUpRequestDto;
+import com.gongjibot.ragchat.dto.*;
 import com.gongjibot.ragchat.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -33,5 +32,18 @@ public class UserController {
     @GetMapping("/jwt-test")
     public String jwtTest() {
         return "jwtTest 요청 성공";
+    }
+
+    @PostMapping("find-id")
+    public ResponseEntity<FindIdResponseDto> findId(@RequestBody @Valid FindIdRequestDto requestBody) {
+        String username = userService.findId(requestBody);
+        FindIdResponseDto responseDto = new FindIdResponseDto(username);
+        return ResponseEntity.ok(responseDto);
+    }
+
+    @PostMapping("/password-reset")
+    public ResponseEntity<Void> passwordReset(@RequestBody @Valid PasswordResetDto requestBody) {
+        userService.passwordReset(requestBody);
+        return ResponseEntity.ok().build();
     }
 }

@@ -1,15 +1,16 @@
 package com.gongjibot.ragchat.service;
 
 import com.gongjibot.ragchat.common.Role;
+import com.gongjibot.ragchat.common.VerificationPurpose;
 import com.gongjibot.ragchat.common.exception.BadRequestException;
 import com.gongjibot.ragchat.common.exception.ErrorCode;
-import com.gongjibot.ragchat.dto.EmailCertificationRequestDto;
-import com.gongjibot.ragchat.dto.SignUpRequestDto;
+import com.gongjibot.ragchat.dto.*;
 import com.gongjibot.ragchat.entity.Certification;
 import com.gongjibot.ragchat.entity.User;
 import com.gongjibot.ragchat.entity.VerificationCode;
 import com.gongjibot.ragchat.repository.CertificationRepository;
 import com.gongjibot.ragchat.repository.UserRepository;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -66,22 +67,26 @@ public class UserService {
 
     @Transactional
     public void emailCertification(EmailCertificationRequestDto dto) {
-        Certification certification = createCode(dto.email(), dto.isFindId());
+        Certification certification = createCode(dto.email(), dto.purpose());
         sendMail(certification);
         certificationRepository.save(certification);
     }
 
-    private Certification createCode(String email, boolean isFindId) {
+    private Certification createCode(String email, VerificationPurpose purpose) {
         VerificationCode verificationCode = verificationCodeProvider.provide();
 
-        if (!isFindId) { // 회원가입을 진행하는 경우 인증코드 발송
-            userRepository.findByEmail(email).ifPresent(
-                    user -> {throw new BadRequestException(ErrorCode.EMAIL_DUPLICATED);}
-            );
-        } else { // 아이디 찾기를 진행하는 경우 인증코드 발송
-            userRepository.findByEmail(email).orElseThrow(
-                    () -> new BadRequestException(ErrorCode.USER_NOT_FOUND)
-            );
+        switch (purpose) {
+            case SIGN_UP:
+                userRepository.findByEmail(email).ifPresent(
+                        user -> {throw new BadRequestException(ErrorCode.EMAIL_DUPLICATED);}
+                );
+                break;
+            case FIND_ID:
+            case RESET_PASSWORD:
+                userRepository.findByEmail(email).orElseThrow(
+                        () -> new BadRequestException(ErrorCode.USER_NOT_FOUND)
+                );
+                break;
         }
 
         return Certification.builder()
@@ -99,5 +104,42 @@ public class UserService {
             mail.setSubject("[RAG Chatbot] 이메일 인증 코드");
             mail.setText(content);
         });
+    }
+
+    @Transactional
+    public String findId(FindIdRequestDto requestDto) {
+        User user = userRepository.findByEmail(requestDto.email())
+                .orElseThrow(() -> new BadRequestException(ErrorCode.USER_NOT_FOUND));
+
+        Certification certification = certificationRepository.findFirstByEmailOrderByCreateDateDesc(requestDto.email())
+                .orElseThrow(() -> new BadRequestException(ErrorCode.CERTIFICATION_FAIL));
+
+        boolean isMatched = certification.getVerificationCode().getCode().equals(requestDto.code());
+        if (!isMatched) throw new BadRequestException(ErrorCode.CERTIFICATION_MISMATCH);
+
+        return user.getUsername();
+    }
+
+    @Transactional
+    public void passwordReset(PasswordResetDto requestDto) {
+        // 사용자 정보 조회
+        User user = userRepository.findByEmail(requestDto.email())
+                .orElseThrow(() -> new BadRequestException(ErrorCode.USER_NOT_FOUND));
+
+        // 인증 코드 확인
+        Certification certification = certificationRepository
+                .findFirstByEmailOrderByCreateDateDesc(requestDto.email())
+                .orElseThrow(() -> new BadRequestException(ErrorCode.CERTIFICATION_FAIL));
+
+        // 인증 코드 일치 여부 확인
+        boolean isMatched = certification.getVerificationCode().getCode().equals(requestDto.code());
+        if (!isMatched) throw new BadRequestException(ErrorCode.CERTIFICATION_MISMATCH);
+
+        // 비밀번호 암호화 및 업데이트
+        String encodedPassword = passwordEncoder.encode(requestDto.newPassword());
+        user.updatePassword(encodedPassword);
+
+        // 사용자 정보 저장
+        userRepository.save(user);
     }
 }
