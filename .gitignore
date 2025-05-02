@@ -39,3 +39,4 @@ out/
 ### Security ###
 .qodo
 /src/main/resources/security/
+.env

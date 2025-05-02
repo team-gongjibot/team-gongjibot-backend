@@ -5,17 +5,32 @@ services:
     image: mysql:8.0
     container_name: ragchat
     ports:
-      - "3308:3306"
+      - "3308:3308"
     environment:
-      MYSQL_DATABASE: ragchat
-      MYSQL_USERNAME: root
-      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USERNAME: ${MYSQL_USERNAME}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    env_file:
+      - ./.env
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -P 3308 -u root -p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - ragchat
     volumes:
       - mysql_data:/var/lib/mysql
     command:
+      - --port=3308
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
     restart: always
+
+networks:
+  ragchat:
+    driver: bridge
 
 volumes:
   mysql_data:
