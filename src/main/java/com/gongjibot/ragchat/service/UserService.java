@@ -107,39 +107,41 @@ public class UserService {
     }
 
     @Transactional
-    public String findId(FindIdRequestDto requestDto) {
-        User user = userRepository.findByEmail(requestDto.email())
+    public String findId(FindIdRequestDto dto) {
+        User user = userRepository.findByEmail(dto.email())
                 .orElseThrow(() -> new BadRequestException(ErrorCode.USER_NOT_FOUND));
 
-        Certification certification = certificationRepository.findFirstByEmailOrderByCreateDateDesc(requestDto.email())
+        Certification certification = certificationRepository.findFirstByEmailOrderByCreateDateDesc(dto.email())
                 .orElseThrow(() -> new BadRequestException(ErrorCode.CERTIFICATION_FAIL));
 
-        boolean isMatched = certification.getVerificationCode().getCode().equals(requestDto.code());
+        boolean isMatched = certification.getVerificationCode().getCode().equals(dto.code());
         if (!isMatched) throw new BadRequestException(ErrorCode.CERTIFICATION_MISMATCH);
 
+        certificationRepository.deleteByEmail(dto.email());
         return user.getUsername();
     }
 
     @Transactional
-    public void passwordReset(PasswordResetDto requestDto) {
+    public void passwordReset(PasswordResetDto dto) {
         // 사용자 정보 조회
-        User user = userRepository.findByEmail(requestDto.email())
+        User user = userRepository.findByEmail(dto.email())
                 .orElseThrow(() -> new BadRequestException(ErrorCode.USER_NOT_FOUND));
 
         // 인증 코드 확인
         Certification certification = certificationRepository
-                .findFirstByEmailOrderByCreateDateDesc(requestDto.email())
+                .findFirstByEmailOrderByCreateDateDesc(dto.email())
                 .orElseThrow(() -> new BadRequestException(ErrorCode.CERTIFICATION_FAIL));
 
         // 인증 코드 일치 여부 확인
-        boolean isMatched = certification.getVerificationCode().getCode().equals(requestDto.code());
+        boolean isMatched = certification.getVerificationCode().getCode().equals(dto.code());
         if (!isMatched) throw new BadRequestException(ErrorCode.CERTIFICATION_MISMATCH);
 
         // 비밀번호 암호화 및 업데이트
-        String encodedPassword = passwordEncoder.encode(requestDto.newPassword());
+        String encodedPassword = passwordEncoder.encode(dto.newPassword());
         user.updatePassword(encodedPassword);
 
         // 사용자 정보 저장
         userRepository.save(user);
+        certificationRepository.deleteByEmail(dto.email());
     }
 }
