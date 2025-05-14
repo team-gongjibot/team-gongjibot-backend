@@ -36,10 +36,6 @@ public class UserService {
     public void singUp(SignUpRequestDto dto) {
         String encodePassword = passwordEncoder.encode(dto.password());
 
-        if (userRepository.findByUsername(dto.username()).isPresent()) {
-            throw new BadRequestException(ErrorCode.USER_NAME_DUPLICATED);
-        }
-
         if (userRepository.findByNickname(dto.nickname()).isPresent()) {
             throw new BadRequestException(ErrorCode.NICK_NAME_DUPLICATED);
         }
@@ -54,9 +50,8 @@ public class UserService {
             throw new BadRequestException(ErrorCode.CERTIFICATION_MISMATCH);
 
         User user = User.builder()
-                .username(dto.username())
-                .password(encodePassword)
                 .email(dto.email())
+                .password(encodePassword)
                 .nickname(dto.nickname())
                 .role(Role.USER)
                 .build();
@@ -106,20 +101,20 @@ public class UserService {
         });
     }
 
-    @Transactional
-    public String findId(FindIdRequestDto dto) {
-        User user = userRepository.findByEmail(dto.email())
-                .orElseThrow(() -> new BadRequestException(ErrorCode.USER_NOT_FOUND));
-
-        Certification certification = certificationRepository.findFirstByEmailOrderByCreateDateDesc(dto.email())
-                .orElseThrow(() -> new BadRequestException(ErrorCode.CERTIFICATION_FAIL));
-
-        boolean isMatched = certification.getVerificationCode().getCode().equals(dto.code());
-        if (!isMatched) throw new BadRequestException(ErrorCode.CERTIFICATION_MISMATCH);
-
-        certificationRepository.deleteByEmail(dto.email());
-        return user.getUsername();
-    }
+//    @Transactional
+//    public String findId(FindIdRequestDto dto) {
+//        User user = userRepository.findByEmail(dto.email())
+//                .orElseThrow(() -> new BadRequestException(ErrorCode.USER_NOT_FOUND));
+//
+//        Certification certification = certificationRepository.findFirstByEmailOrderByCreateDateDesc(dto.email())
+//                .orElseThrow(() -> new BadRequestException(ErrorCode.CERTIFICATION_FAIL));
+//
+//        boolean isMatched = certification.getVerificationCode().getCode().equals(dto.code());
+//        if (!isMatched) throw new BadRequestException(ErrorCode.CERTIFICATION_MISMATCH);
+//
+//        certificationRepository.deleteByEmail(dto.email());
+//        return user.getUsername();
+//    }
 
     @Transactional
     public void passwordReset(PasswordResetDto dto) {

@@ -34,12 +34,12 @@ public class UserController {
         return "jwtTest 요청 성공";
     }
 
-    @PostMapping("find-id")
-    public ResponseEntity<FindIdResponseDto> findId(@RequestBody @Valid FindIdRequestDto requestBody) {
-        String username = userService.findId(requestBody);
-        FindIdResponseDto responseDto = new FindIdResponseDto(username);
-        return ResponseEntity.ok(responseDto);
-    }
+    // @PostMapping("find-id")
+    // public ResponseEntity<FindIdResponseDto> findId(@RequestBody @Valid FindIdRequestDto requestBody) {
+    //     String username = userService.findId(requestBody);
+    //     FindIdResponseDto responseDto = new FindIdResponseDto(username);
+    //     return ResponseEntity.ok(responseDto);
+    // }
 
     @PostMapping("/password-reset")
     public ResponseEntity<Void> passwordReset(@RequestBody @Valid PasswordResetDto requestBody) {
