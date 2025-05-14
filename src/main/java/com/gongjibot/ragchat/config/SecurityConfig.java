@@ -5,6 +5,9 @@ import com.gongjibot.ragchat.filter.CustomJsonUsernamePasswordAuthenticationFilt
 import com.gongjibot.ragchat.filter.JwtAuthenticationProcessingFilter;
 import com.gongjibot.ragchat.handler.LoginFailureHandler;
 import com.gongjibot.ragchat.handler.LoginSuccessHandler;
+import com.gongjibot.ragchat.oauth2.handler.OAuth2LoginFailureHandler;
+import com.gongjibot.ragchat.oauth2.handler.OAuth2LoginSuccessHandler;
+import com.gongjibot.ragchat.oauth2.service.CustomOAuth2UserService;
 import com.gongjibot.ragchat.repository.UserRepository;
 import com.gongjibot.ragchat.service.JwtService;
 import com.gongjibot.ragchat.service.LoginService;
@@ -35,6 +38,9 @@ public class SecurityConfig {
     private final JwtService jwtService;
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
+    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+    private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
+    private final CustomOAuth2UserService customOAuth2UserService;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -68,6 +74,15 @@ public class SecurityConfig {
                 
                 // 나머지 모든 요청은 인증 필요
                 .anyRequest().authenticated()
+            )
+
+            // 소셜 로그인 설정
+            .oauth2Login(oauth2 -> oauth2
+                .successHandler(oAuth2LoginSuccessHandler)
+                .failureHandler(oAuth2LoginFailureHandler)
+                .userInfoEndpoint(userInfo -> userInfo
+                    .userService(customOAuth2UserService)
+                )
             )
             
             // 필터 순서 설정

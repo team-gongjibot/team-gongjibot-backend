@@ -13,6 +13,7 @@ spring:
       - security/application-db.yml
       - security/application-mail.yml
       - security/application-jwt.yml
+      - security/application-oauth.yml
 
 jwt:
   secretKey: ${JWT_SECRET_KEY}

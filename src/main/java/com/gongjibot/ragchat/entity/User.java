@@ -22,23 +22,16 @@ public class User extends BaseEntity {
     @Column(name = "user_id")
     private Long id;
 
-    @Column(name = "username", nullable = false)
-    private String username;
-
-    @Column(name = "password", nullable = false)
-    private String password;
-
     @Column(name = "email", nullable = false)
     private String email;
+
+    // OAuth 사용자는 null 가능
+    @Column(name = "password")
+    private String password;
 
     @Size(max = MAX_NICKNAME_LENGTH)
     @Column(name = "nickname", nullable = false)
     private String nickname;
-
-    @JsonIgnore
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "certification_id")
-    private Certification certification;
 
     @Enumerated(EnumType.STRING)
     private Role role;
@@ -47,6 +40,17 @@ public class User extends BaseEntity {
     private SocialType socialType; // KAKAO, GOOGLE, NAVER
 
     private String socialId;
+
+    // OAuth 관련 필드
+    // 일반 사용자는 모두 null 값을 가짐
+    private String imageUrl;
+    private int age;
+    private String city;
+
+    @JsonIgnore
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "certification_id")
+    private Certification certification;
 
     private String refreshToken;
 
@@ -58,17 +62,20 @@ public class User extends BaseEntity {
         this.refreshToken = refreshToken;
     }
 
-    @Builder
-    public User(String username, String password, String email, String nickname, Role role, Certification certification) {
-        this.username = username;
-        this.password = password;
-        this.email = email;
-        this.nickname = nickname;
-        this.role = role;
-        this.certification = certification;
-    }
-
     public void updatePassword(String newPassword) {
         this.password = newPassword;
+    }
+    
+    @Builder
+    public User(String email, String password, String nickname, Role role,
+                SocialType socialType, String socialId, String imageUrl, Certification certification) {
+        this.email = email;
+        this.password = password;
+        this.nickname = nickname;
+        this.role = role;
+        this.socialType = socialType;
+        this.socialId = socialId;
+        this.imageUrl = imageUrl;
+        this.certification = certification;
     }
 }
