@@ -1,6 +1,7 @@
 package com.gongjibot.ragchat.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gongjibot.ragchat.common.exception.ErrorResponse;
 import com.gongjibot.ragchat.filter.CustomJsonUsernamePasswordAuthenticationFilter;
 import com.gongjibot.ragchat.filter.JwtAuthenticationProcessingFilter;
 import com.gongjibot.ragchat.handler.LoginFailureHandler;
@@ -14,6 +15,8 @@ import com.gongjibot.ragchat.service.LoginService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -24,6 +27,8 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.logout.LogoutFilter;
+
+import java.time.LocalDateTime;
 
 /**
  * 인증은 CustomJsonUsernamePasswordAuthenticationFilter에서 authenticate()로 인증된 사용자로 처리
@@ -51,6 +56,34 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
             
+            // 예외 처리 설정 추가
+            .exceptionHandling(exceptionHandling -> exceptionHandling
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                    
+                    ErrorResponse errorResponse = new ErrorResponse(
+                            "UNAUTHORIZED", 
+                            "인증이 필요합니다", 
+                            LocalDateTime.now()
+                    );
+                    
+                    objectMapper.writeValue(response.getOutputStream(), errorResponse);
+                })
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    response.setStatus(HttpStatus.FORBIDDEN.value());
+                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                    
+                    ErrorResponse errorResponse = new ErrorResponse(
+                            "FORBIDDEN", 
+                            "접근 권한이 없습니다", 
+                            LocalDateTime.now()
+                    );
+                    
+                    objectMapper.writeValue(response.getOutputStream(), errorResponse);
+                })
+            )
+            
             // 세션 관리 설정
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -65,11 +98,7 @@ public class SecurityConfig {
                         "/js/**",
                         "/favicon.ico",
                         "/h2-console/**",
-                        "/api/v1/auth/sign-up",    // 회원가입 API
-                        "/api/v1/auth/email-certification", // 이메일 인증 관련 API
-                        "/api/v1/auth/jwt-test",
-                        "/api/v1/auth/find-id", // 아이디 찾기 API
-                        "/api/v1/auth/password-reset" // 비밀번호 재설정 API
+                        "/api/**"
                 ).permitAll()
                 
                 // 나머지 모든 요청은 인증 필요
