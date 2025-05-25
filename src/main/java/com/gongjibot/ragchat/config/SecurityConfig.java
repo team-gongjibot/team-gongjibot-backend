@@ -27,8 +27,12 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.logout.LogoutFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 
 /**
  * 인증은 CustomJsonUsernamePasswordAuthenticationFilter에서 authenticate()로 인증된 사용자로 처리
@@ -50,75 +54,93 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            // FormLogin, httpBasic, csrf 비활성화
-            .formLogin(formLogin -> formLogin.disable())
-            .httpBasic(httpBasic -> httpBasic.disable())
-            .csrf(csrf -> csrf.disable())
-            .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
-            
-            // 예외 처리 설정 추가
-            .exceptionHandling(exceptionHandling -> exceptionHandling
-                .authenticationEntryPoint((request, response, authException) -> {
-                    response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                    
-                    ErrorResponse errorResponse = new ErrorResponse(
-                            "UNAUTHORIZED", 
-                            "인증이 필요합니다", 
-                            LocalDateTime.now()
-                    );
-                    
-                    objectMapper.writeValue(response.getOutputStream(), errorResponse);
-                })
-                .accessDeniedHandler((request, response, accessDeniedException) -> {
-                    response.setStatus(HttpStatus.FORBIDDEN.value());
-                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                    
-                    ErrorResponse errorResponse = new ErrorResponse(
-                            "FORBIDDEN", 
-                            "접근 권한이 없습니다", 
-                            LocalDateTime.now()
-                    );
-                    
-                    objectMapper.writeValue(response.getOutputStream(), errorResponse);
-                })
-            )
-            
-            // 세션 관리 설정
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            
-            // URL 권한 관리
-            .authorizeHttpRequests(auth -> auth
-                // 정적 리소스 및 특정 경로 허용
-                .requestMatchers(
-                        "/",
-                        "/css/**",
-                        "/images/**",
-                        "/js/**",
-                        "/favicon.ico",
-                        "/h2-console/**",
-                        "/api/**"
-                ).permitAll()
-                
-                // 나머지 모든 요청은 인증 필요
-                .anyRequest().authenticated()
-            )
+                // React와 통신을 위해 CORS 설정
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                // FormLogin, httpBasic, csrf 비활성화
+                .formLogin(formLogin -> formLogin.disable())
+                .httpBasic(httpBasic -> httpBasic.disable())
+                .csrf(csrf -> csrf.disable())
+                .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
 
-            // 소셜 로그인 설정
-            .oauth2Login(oauth2 -> oauth2
-                .successHandler(oAuth2LoginSuccessHandler)
-                .failureHandler(oAuth2LoginFailureHandler)
-                .userInfoEndpoint(userInfo -> userInfo
-                    .userService(customOAuth2UserService)
+                // 예외 처리 설정 추가
+                .exceptionHandling(exceptionHandling -> exceptionHandling
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+
+                            ErrorResponse errorResponse = new ErrorResponse(
+                                    "UNAUTHORIZED",
+                                    "인증이 필요합니다",
+                                    LocalDateTime.now()
+                            );
+                            objectMapper.writeValue(response.getOutputStream(), errorResponse);
+                        })
+
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(HttpStatus.FORBIDDEN.value());
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+
+                            ErrorResponse errorResponse = new ErrorResponse(
+                                    "FORBIDDEN",
+                                    "접근 권한이 없습니다",
+                                    LocalDateTime.now()
+                            );
+                            objectMapper.writeValue(response.getOutputStream(), errorResponse);
+                        })
                 )
-            )
-            
-            // 필터 순서 설정
-            .addFilterAfter(customJsonUsernamePasswordAuthenticationFilter(), LogoutFilter.class)
-            .addFilterBefore(jwtAuthenticationProcessingFilter(), CustomJsonUsernamePasswordAuthenticationFilter.class);
+
+                // 세션 관리 설정
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                // URL 권한 관리
+                .authorizeHttpRequests(auth -> auth
+                        // 정적 리소스 및 특정 경로 허용
+                        .requestMatchers(
+                                "/",
+                                "/index.html",  // 명시적으로 index.html 추가
+                                "/login",       // 로그인 경로 추가
+                                "/oauth2/**",   // OAuth2 관련 모든 경로 추가
+                                "/oauth2/authorization/**", // OAuth2 인증 시작점
+                                "/login/oauth2/**",        // OAuth2 리다이렉트 경로
+                                "/css/**",
+                                "/images/**",
+                                "/js/**",
+                                "/h2-console/**",
+                                "/api/**"
+                        ).permitAll()
+
+                        // 나머지 모든 요청은 인증 필요
+                        .anyRequest().authenticated()
+                )
+
+                // 소셜 로그인 설정
+                .oauth2Login(oauth2 -> oauth2
+                        .successHandler(oAuth2LoginSuccessHandler)
+                        .failureHandler(oAuth2LoginFailureHandler)
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(customOAuth2UserService)
+                        )
+                )
+
+                // 필터 순서 설정
+                .addFilterAfter(customJsonUsernamePasswordAuthenticationFilter(), LogoutFilter.class)
+                .addFilterBefore(jwtAuthenticationProcessingFilter(), CustomJsonUsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true);
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Authorization-refresh")); // 헤더에 전송되는 JWT 토큰을 전달하기 위해 노출시킴
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
     @Bean
